@@ -1,7 +1,7 @@
 name: Node CI/CD
 on: 
   push: 
-    branches: main,master
+    branches: master
     # paths-ignore:
     #   - ./github/workflows/*
   workflow_dispatch:
