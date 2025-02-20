@@ -30,8 +30,14 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG" >> $GITHUB_OUTPUT
-      - name: Generate ECS Task Definition JSON
-        run: echo '${{ secrets.TASK_DEFINITION }}' > nodejs-task-definition.json
+      # - name: Generate ECS Task Definition JSON
+      #   run: echo '${{ secrets.TASK_DEFINITION }}' > nodejs-task-definition.json
+      - name: Fetch Task Definition from ECS
+        run: |
+          aws ecs describe-task-definition \
+          --task-definition ${{ secrets.ECS_TASK_DEF }} \
+          --query "taskDefinition" \
+          --output json | jq -c > nodejs-task-definition.json
 
       - name: Fill new image to Task definition
         id: task-def
