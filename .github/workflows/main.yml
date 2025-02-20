@@ -4,6 +4,7 @@ on:
     branches: main,master
     paths-ignore:
       - ./github/workflows/*
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -24,7 +25,7 @@ jobs:
         id: build
         env:
           ECR_REGISTRY: ${{steps.ecr-login.outputs.registry}}
-          ECR_REPO: ${{secrets.ECR-REPO}}
+          ECR_REPO: ${{secrets.ECR_REPO}}
           IMAGE_TAG: ${{github.sha}}
         run: |
           docker build -t $ECR-REGISTRY/$ECR_REPO:$IMAGE_TAG .
