@@ -1,0 +1,48 @@
+name: Node CI/CD
+on: 
+  push: 
+    branches: main,master
+    paths-ignore:
+      - ./github/workflows/*
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code 
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          ws-region: ${{secrets.AWS-REGION}}
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build, tag and push image to ecr
+        id: build
+        env:
+          ECR_REGISTRY: ${{steps.ecr-login.outputs.registry}}
+          ECR_REPO: ${{secrets.ECR-REPO}}
+          IMAGE_TAG: ${{github.sha}}
+        run: |
+          docker build -t $ECR-REGISTRY/$ECR_REPO:$IMAGE_TAG .
+          docker push $ECR-REGISTRY/$ECR_REPO:$IMAGE_TAG
+          echo "image=$ECR-REGISTRY/$ECR_REPO:$IMAGE_TAG >> $GITHUB_OUTPUT
+      - name: Fill new image to Task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{secrets.TASK_DEFINITION}}
+          container_name: ${{secrets.CONTAINER_NAME}}  
+          image: ${{steps.build.outputs.image}}
+      - name: Deploy to AWS ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-defition: ${{steps.task-def.outputs.task-definition}}
+          service: ${{secrets.SERVICE}}
+          cluster: ${{secrets.CLUSTER}}
+          wait-for-service-stability: true
+      
+      
